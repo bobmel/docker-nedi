@@ -1,0 +1,49 @@
+version: '2'
+
+services:
+  nedi:
+    container_name: nedi
+    image: bobmel/nedi
+    ports:
+     #### Uncommenting this requires editing /etc/nginx/conf.d/default.conf 
+     # - 8080:80
+      - 9443:443
+      - 1162:162
+     #### Uncomment this if ENABLE_SYSLOG_SERVICE=TRUE
+      - 1514:514
+    volumes:
+      - ./nedi_data:/data/nedi
+    environment: 
+      - ENABLE_MONITORING_SERVICE=TRUE
+      - ENABLE_SYSLOG_SERVICE=FALSE
+      - ENABLE_NETFLOW_SERVICE=FALSE
+
+     ### Pointing to the mariadb container created below
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_NAME=nedi
+      - DB_USER=nedi
+      - DB_PASS=nedipass
+      - ROOT_PASS=mdbrootpw
+    restart: always
+    networks:
+      - proxy-tier
+
+  mariadb:
+    container_name: mariadb
+    image: bobmel/mariadb
+    restart: always
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=mdbrootpw
+      - MYSQL_DATABASE=nedi
+      - MYSQL_USER=nedi
+      - MYSQL_PASSWORD=nedi
+    networks:
+      - proxy-tier
+
+networks:
+  proxy-tier:
+    external:
+      name: nginx-proxy

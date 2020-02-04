@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv bash
+
+for s in /assets/functions/*; do source $s; done
+PROCESS_NAME="nedi-syslog"
+DAEMON=/data/nedi/syslog.pl
+DAEMON_ARGS="-Dp 1514"
+
+check_container_initialized
+check_service_initialized init
+liftoff
+
+print_info "Starting nedi-syslog (Nedi ${NEDI_VERSION} Community Edition)"
+silent exec s6-setuidgid nedi $DAEMON $DAEMON_ARGS

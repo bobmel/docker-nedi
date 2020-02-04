@@ -1,0 +1,81 @@
+#!/usr/bin/with-contenv bash
+
+conditionally_disable_services() {
+  echo "First time installation already completed. Nothing more to do here."
+  if [ "$ENABLE_MONITORING_SERVICE" = "FALSE" ] || [ "$ENABLE_MONITORING_SERVICE" = "false" ];  then
+    echo "Disabling Nedi Monitoring Functionality"
+    s6-svc -d /var/run/s6/services/40-nedi-monitor
+  fi
+  if [ "$ENABLE_SYSLOG_SERVICE" = "FALSE" ] || [ "$ENABLE_SYSLOG_SERVICE" = "false" ];  then
+    echo "Disabling Nedi Syslog Functionality"
+    s6-svc -d /var/run/s6/services/50-nedi-syslog
+  fi
+  if [ "$ENABLE_NETFLOW_SERVICE" = "FALSE" ] || [ "$ENABLE_NETFLOW_SERVICE" = "false" ];  then
+    echo "Disabling NetFlow Functionality"
+    s6-svc -d /var/run/s6/services/60-nfdump
+  fi
+}
+
+for s in /assets/functions/*; do source $s; done
+PROCESS_NAME="nedi"
+
+### Startup installation check
+if [ -f /data/.installed ]; then
+  conditionally_disable_services
+  liftoff
+fi
+
+### Ensure necessary variables are set
+sanity_var ROOT_PASS "Root Password"
+sanity_var DB_PASS "Database Password"
+
+
+### Enable SNMP latency measurement if possible
+if ! grep -q Time::HiRes /usr/share/perl5/vendor_perl/Net/SNMP/Message.pm; then
+  echo "Enabling SNMP latency measurement"
+  sed -i_orig '23 i use Time::HiRes;' /usr/share/perl5/vendor_perl/Net/SNMP/Message.pm
+  sed -i_orig '687 i \ \ \ $this->{_transport}->{_send_time} = Time::HiRes::time;' /usr/share/perl5/vendor_perl/Net/SNMP/Message.pm
+fi
+
+
+### Grant required database privileges
+echo "GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'%';" | mysql -h $DB_HOST -u root -p$ROOT_PASS
+
+
+### Apply nedi configurations
+sed -i_orig '/dbpass/s/dbpa55/'"${DB_PASS}"'/g' /data/nedi/nedi.conf
+sed -i_orig 's/$nedihost\s=\s<STDIN>;/$nedihost = \"'`hostname`'\"; print $nedihost.\"\\n\";/' /data/nedi/nedi.pl
+/data/nedi/nedi.pl -i root $ROOT_PASS
+
+
+### Set up cert for nginx 
+openssl genrsa -out /data/nedi/ssl/private/server.key 1024
+openssl req -new -key /data/nedi/ssl/private/server.key -out /data/nedi/ssl/server.csr -subj "$NEDI_CERT_INFO"
+openssl x509 -req -days 365 -in /data/nedi/ssl/server.csr -signkey /data/nedi/ssl/private/server.key -out /data/nedi/ssl/server.crt
+
+
+### Configure nginx for nedi along with custom 404 page
+ln -s /etc/nginx/conf.d/default_nedi.conf /etc/nginx/conf.d/default.conf
+chown -R nginx:www-data /www/html/404error
+
+
+### Install netflow if enabled
+case "$ENABLE_NETFLOW_SERVICE" in
+  TRUE|true|YES|yes)
+    apk install nfdump
+    mkdir -p $NFDUMP_DATA_BASE_DIR
+    nfexpire -s 1g -e $NFDUMP_DATA_BASE_DIR
+    ;;
+  *)
+    ;;
+esac
+
+
+### Disable services that should not run
+conditionally_disable_services
+
+
+### Initial installation completed
+touch /data/.installed
+
+liftoff

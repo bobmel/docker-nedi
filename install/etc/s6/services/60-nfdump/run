@@ -1,0 +1,17 @@
+#!/usr/bin/with-contenv bash
+
+for s in /assets/functions/*; do source $s; done
+PROCESS_NAME="nfcapd"
+
+DAEMON=/usr/bin/nfcapd
+NFDUMP_DATA_BASE_DIR=${NFDUMP_DATA_BASE_DIR:-"/data/nfdump/datafiles"}
+PIDFILE=/var/run/$PROCESS_NAME.pid
+# daemonize, expire data files on cycle end, set dir for data files 
+DAEMON_ARGS="-D -e -l $NFDUMP_DATA_BASE_DIR -P $PIDFILE"
+
+check_container_initialized
+check_service_initialized init
+liftoff
+
+print_info "Starting nfdump"
+silent exec $DAEMON $DAEMON_ARGS
