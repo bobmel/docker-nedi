@@ -9,7 +9,7 @@ Dockerfile to build a [Nedi](http://www.nedi.ch) container image for Wandboard Q
     * Traffic graphing
     * Uptime, BGP peer and interface status monitoring
     * Extensive reporting ranging from devices, modules and interfaces 
-* This container uses a [customized Nginx with Php-FPM](https://hub.docker.com/r/tiredofit/nginx-php-fpm) which includes [s6 overlay](https://github.com/just-containers/s6-overlay) enabled for PID 1 Init capabilities, [zabbix-agent](https://zabbix.org) for individual container monitoring, Cron also installed along with other tools (bash,curl, less, logrotate, mariadb-client, nano, vim) for easier management. It also supports sending to external SMTP servers..
+* This container uses a [customized Nginx with Php-FPM](https://hub.docker.com/r/tiredofit/nginx-php-fpm) which includes [s6 overlay](https://github.com/just-containers/s6-overlay) enabled for PID 1 Init capabilities, [zabbix-agent](https://zabbix.org) for individual container monitoring, Cron also installed along with other tools (bash,curl, less, logrotate, mariadb-client, nano, vim) for easier management. It also supports sending to external SMTP servers.
 
 
 [Changelog](CHANGELOG.md)
@@ -72,7 +72,7 @@ The following directory is used for configuration and can be mapped for persiste
 |--------------|---------------------------|
 | `/data/nedi` | Data Persistence for Nedi |
 
-Addtional directories as specified in the [Base image](https://hub.docker.com/r/tiredofit/alpine), the [Nginx Base](https://hub.docker.com/t/tiredofit/nginx), and [Nginx with Php-FPM](https://hub.docker.com/r/tiredofit/nginx-php-fpm) can also be mapped to the host for persistent storage.
+Additional directories as specified in the [Base image](https://hub.docker.com/r/tiredofit/alpine), the [Nginx Base](https://hub.docker.com/t/tiredofit/nginx), and [Nginx with Php-FPM](https://hub.docker.com/r/tiredofit/nginx-php-fpm) can also be mapped to the host for persistent storage.
 
 
 ### Database
@@ -99,7 +99,7 @@ Below is a list of available options that can be used to customize your installa
 | `NEDI_VERSION`              | Nedi version (default: `1.8C`)                                                  |
 | `PHP_INI_FILE`              | Location of configuration file for php (default: `1/etc/php7/php.ini`)          |
 
-Addtional options can be found the [Base image](https://hub.docker.com/r/tiredofit/alpine), the [Nginx Base](https://hub.docker.com/t/tiredofit/nginx), and [Nginx with Php-FPM](https://hub.docker.com/r/tiredofit/nginx-php-fpm).
+Additional options can be found the [Base image](https://hub.docker.com/r/tiredofit/alpine), the [Nginx Base](https://hub.docker.com/t/tiredofit/nginx), and [Nginx with Php-FPM](https://hub.docker.com/r/tiredofit/nginx-php-fpm).
 
 ### Networking
 
@@ -108,9 +108,9 @@ The following ports are exposed.
 | Port      | Description                                          |
 |-----------|------------------------------------------------------|
 | `80`      | Nedi HTTP web interface (*not enabled by default*)   |
-| `162`     | Nedi monitoring service                              |
+| `162 UDP` | Nedi monitoring service                              |
 | `443`     | Nedi HTTPS web interface                             |
-| `514`     | Nedi Syslog service                                  |
+| `514 UDP` | Nedi Syslog service                                  |
 
 # Maintenance
 #### Shell Access

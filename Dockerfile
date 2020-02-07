@@ -50,7 +50,7 @@ RUN adduser -H -s /sbin/nologin -D nedi && \
     mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.orig
 
 ### Networking Configuration
-EXPOSE 80 162 443 514
+EXPOSE 80 162/UDP 443 514/UDP
 
 ### Files Addition
 ADD install /
